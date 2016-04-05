@@ -5,4 +5,16 @@
         android:defaultValue="false"
         android:key="service_status"
         android:title="@string/service_pref" />
+
+    <me.rijul.dozeonproximity.SeekBarPreference
+        android:key="service_check_time"
+        android:title="@string/time_pref"
+        android:summary="@string/time_pref_desc"
+        minimum="100"
+        maximum="20000"
+        interval="100"
+        android:defaultValue="4000"
+        monitorBoxEnabled="true"
+        monitorBoxUnit="ms"
+        android:dependency="service_status"/>
 </PreferenceScreen>

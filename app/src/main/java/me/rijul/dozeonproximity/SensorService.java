@@ -5,18 +5,24 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.preference.PreferenceManager;
+import android.util.Log;
 
-public class SensorService extends Service {
+import java.util.prefs.PreferenceChangeEvent;
+import java.util.prefs.PreferenceChangeListener;
+
+public class SensorService extends Service implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String ACTION_DOZE = "com.android.systemui.doze.pulse";
     public static final String TAG = "DozeOnProximity";
-    private static final int DELAY_BETWEEN_DOZES_IN_MS = 4500;
+    private int DELAY_BETWEEN_DOZES_IN_MS = MainActivity.DEFAULT_TIME;
     public static boolean isRunning;
     private Context mContext;
     private ProximitySensor mSensor;
@@ -53,6 +59,9 @@ public class SensorService extends Service {
                 Intent.ACTION_SCREEN_ON);
         screenStateFilter.addAction(Intent.ACTION_SCREEN_OFF);
         mContext.registerReceiver(mScreenStateReceiver, screenStateFilter);
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(mContext);
+        preferences.registerOnSharedPreferenceChangeListener(this);
+        onSharedPreferenceChanged(preferences, null);
         return START_STICKY;
     }
 
@@ -60,6 +69,7 @@ public class SensorService extends Service {
     public void onDestroy() {
         isRunning = false;
         mContext.unregisterReceiver(mScreenStateReceiver);
+        PreferenceManager.getDefaultSharedPreferences(mContext).unregisterOnSharedPreferenceChangeListener(this);
         super.onDestroy();
     }
 
@@ -71,6 +81,7 @@ public class SensorService extends Service {
     private void launchDozePulse() {
         mContext.sendBroadcast(new Intent(ACTION_DOZE));
         mLastDoze = System.currentTimeMillis();
+        Log.d(TAG, "Launching pulse!");
     }
 
     private boolean isInteractive() {
@@ -84,6 +95,13 @@ public class SensorService extends Service {
     private void onDisplayOff() {
         mSensor.enable();
         displayTurnedOff = true;
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        DELAY_BETWEEN_DOZES_IN_MS = sharedPreferences.getInt(MainActivity.SERVICE_CHECK_TIME, MainActivity.DEFAULT_TIME);
+        if (!sharedPreferences.getBoolean(MainActivity.SERVICE_STATUS, false))
+            stopSelf();
     }
 
     class ProximitySensor implements SensorEventListener {

@@ -13,7 +13,7 @@ public class BootReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        if (prefs.getBoolean("service_status", false)) {
+        if (prefs.getBoolean(MainActivity.SERVICE_STATUS, false)) {
             context.startService(new Intent(context, SensorService.class));
         }
     }
